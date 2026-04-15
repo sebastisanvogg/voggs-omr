@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { ConsentBanner } from "@/components/consent-banner";
+import { Footer } from "@/components/sections/footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,7 +32,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de">
-      <body>{children}</body>
+      <body className="flex min-h-screen flex-col">
+        <div className="flex-1">{children}</div>
+        <Footer />
+        <ConsentBanner />
+      </body>
     </html>
   );
 }
