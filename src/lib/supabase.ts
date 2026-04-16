@@ -108,12 +108,5 @@ async function writeLocal(
 }
 
 function cryptoRandomId(): string {
-  // Avoid pulling `node:crypto` at module load (Edge-runtime friendly even
-  // though this file is server-only).
-  if (typeof globalThis.crypto?.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
-  }
-  // Fallback for older Node versions
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require("node:crypto").randomUUID();
+  return globalThis.crypto.randomUUID();
 }

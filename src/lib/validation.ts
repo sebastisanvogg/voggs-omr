@@ -60,6 +60,7 @@ export const leadInputSchema = z.object({
 });
 
 export type LeadInput = z.infer<typeof leadInputSchema>;
+export type LeadFormInput = z.input<typeof leadInputSchema>;
 
 /* -------------------------------------------------------------------------- */
 /*  Ad Analyzer result                                                        */
