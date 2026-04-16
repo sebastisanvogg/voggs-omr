@@ -1,7 +1,21 @@
 "use client";
 
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, Sparkles } from "lucide-react";
+
+const CLIENT_LOGOS = [
+  { src: "/logos/carly.png", alt: "Carly", width: 120, height: 32 },
+  { src: "/logos/hellofresh.png", alt: "HelloFresh", width: 120, height: 42 },
+  { src: "/logos/turtle-beach.png", alt: "Turtle Beach", width: 120, height: 34 },
+  { src: "/logos/true-fruits.png", alt: "true fruits", width: 110, height: 24 },
+  { src: "/logos/babbel.png", alt: "Babbel", width: 100, height: 26 },
+  { src: "/logos/tom-tailor.png", alt: "TOM TAILOR", width: 120, height: 15 },
+  { src: "/logos/magenta.png", alt: "Magenta Telekom", width: 110, height: 30 },
+  { src: "/logos/yfood.png", alt: "YFood", width: 80, height: 22 },
+  { src: "/logos/urlaubsguru.png", alt: "Urlaubsguru", width: 120, height: 28 },
+  { src: "/logos/westwing.png", alt: "Westwing", width: 120, height: 30 },
+];
 
 export function Hero() {
   const scrollTo = (id: string) => {
@@ -53,18 +67,20 @@ export function Hero() {
           </Button>
         </div>
 
-        {/* Client logos placeholder strip */}
+        {/* Client logos */}
         <div className="mt-16">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
             Vertraut von Performance-Teams bei
           </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-8 opacity-40">
-            {/* TODO: replace with real client logos */}
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-8 w-20 rounded bg-border/50"
-                aria-label={`Client logo ${i + 1} placeholder`}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-6 opacity-60 grayscale brightness-200">
+            {CLIENT_LOGOS.map((logo) => (
+              <Image
+                key={logo.alt}
+                src={logo.src}
+                alt={logo.alt}
+                width={logo.width}
+                height={logo.height}
+                className="h-6 w-auto object-contain sm:h-8"
               />
             ))}
           </div>

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { leadInputSchema } from "@/lib/validation";
 import { insertLead } from "@/lib/supabase";
 import { sendLeadEmails } from "@/lib/email";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 
@@ -31,8 +32,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, id: "none" });
   }
 
-  // --- Turnstile stub ---
-  // TODO: when TURNSTILE_SECRET_KEY is set, verify data.turnstileToken here.
+  // --- Turnstile verification ---
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    undefined;
+
+  const turnstile = await verifyTurnstileToken(data.turnstileToken, ip);
+  if (!turnstile.verified) {
+    return NextResponse.json(
+      { error: "Spam-Schutz fehlgeschlagen. Bitte Seite neu laden." },
+      { status: 403 }
+    );
+  }
 
   const userAgent = req.headers.get("user-agent") ?? undefined;
 

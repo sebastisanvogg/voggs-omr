@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Turnstile } from "@/components/turnstile";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,11 @@ export function LeadDialog({
 }: LeadDialogProps) {
   const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>();
+
+  const handleTurnstileToken = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
 
   const {
     register,
@@ -120,7 +126,7 @@ export function LeadDialog({
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(typedData),
+        body: JSON.stringify({ ...typedData, turnstileToken }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -257,6 +263,9 @@ export function LeadDialog({
                   ))}
                 </div>
               </fieldset>
+
+              {/* Cloudflare Turnstile (invisible widget) */}
+              <Turnstile onToken={handleTurnstileToken} />
 
               {serverError && (
                 <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
