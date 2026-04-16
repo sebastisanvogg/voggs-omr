@@ -1,9 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import os from "node:os";
 import { isAcceptedMime, UPLOAD_LIMITS, analysisResultSchema } from "@/lib/validation";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { getMockAnalysisResult } from "@/lib/analyzer";
+import { getMockAnalysisResult, analyzeAdLive } from "@/lib/analyzer";
+import { extractFrames } from "@/lib/video-frames";
 
 export const runtime = "nodejs";
+
+// Allow up to 60 seconds for live analysis (video frame extraction + Claude API)
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   // --- Rate limit ---
@@ -51,24 +58,71 @@ export async function POST(req: NextRequest) {
 
   if (file.size > UPLOAD_LIMITS.maxBytes) {
     return NextResponse.json(
-      { error: `Datei zu groß (max. ${Math.round(UPLOAD_LIMITS.maxBytes / 1024 / 1024)} MB).` },
+      {
+        error: `Datei zu groß (max. ${Math.round(UPLOAD_LIMITS.maxBytes / 1024 / 1024)} MB).`,
+      },
       { status: 413 }
     );
   }
 
   // Optional metadata
-  const brand = formData.get("brand") as string | null;
-  const audience = formData.get("audience") as string | null;
+  const brand = (formData.get("brand") as string | null) ?? undefined;
+  const audience = (formData.get("audience") as string | null) ?? undefined;
 
   // --- Analyze ---
   const mode = process.env.ANALYZER_MODE ?? "mock";
 
   if (mode === "live") {
-    // Live analysis is wired in a later commit (Step 8).
-    // For now, fall through to mock.
-    // TODO: wire Anthropic analysis here
+    try {
+      const isVideo = file.type.startsWith("video/");
+      let images: Array<{ base64: string; mimeType: string }>;
+
+      if (isVideo) {
+        // Write video to temp file, extract frames, clean up
+        const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "ad-upload-"));
+        const tmpFile = path.join(tmpDir, `upload${extFromMime(file.type)}`);
+        const buf = Buffer.from(await file.arrayBuffer());
+        await fs.writeFile(tmpFile, buf);
+
+        images = await extractFrames(tmpFile);
+
+        // Cleanup temp file
+        await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+
+        if (images.length === 0) {
+          return NextResponse.json(
+            { error: "Video konnte nicht verarbeitet werden. Versuche ein anderes Format." },
+            { status: 422 }
+          );
+        }
+      } else {
+        // Image: read directly as base64
+        const buf = Buffer.from(await file.arrayBuffer());
+        images = [{ base64: buf.toString("base64"), mimeType: file.type }];
+      }
+
+      const result = await analyzeAdLive({ images, brand, audience });
+
+      return NextResponse.json({
+        ok: true,
+        analysis: result,
+        meta: { mode, brand, audience, remaining: rl.remaining },
+      });
+    } catch (err) {
+      console.error("[analyze-ad] Live analysis failed:", err);
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error
+              ? err.message
+              : "Analyse fehlgeschlagen. Bitte erneut versuchen.",
+        },
+        { status: 500 }
+      );
+    }
   }
 
+  // --- Mock mode ---
   // Simulate processing latency so the progress animation feels natural
   await new Promise((r) => setTimeout(r, 2_500));
 
@@ -87,11 +141,12 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     analysis: parsed.data,
-    meta: {
-      mode,
-      brand: brand ?? undefined,
-      audience: audience ?? undefined,
-      remaining: rl.remaining,
-    },
+    meta: { mode, brand, audience, remaining: rl.remaining },
   });
+}
+
+function extFromMime(mime: string): string {
+  if (mime === "video/quicktime") return ".mov";
+  if (mime === "video/mp4") return ".mp4";
+  return ".bin";
 }

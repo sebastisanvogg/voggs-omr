@@ -1,4 +1,80 @@
-import type { AnalysisResult } from "@/lib/validation";
+import Anthropic from "@anthropic-ai/sdk";
+import { analysisResultSchema, type AnalysisResult } from "@/lib/validation";
+import { ANALYZER_SYSTEM_PROMPT, ANALYZER_TOOL } from "@/lib/ad-analyzer-prompt";
+
+/* -------------------------------------------------------------------------- */
+/*  Live analysis via Anthropic Claude (Vision + Tool Use)                     */
+/* -------------------------------------------------------------------------- */
+
+interface AnalyzeInput {
+  /** Base64-encoded images (for image uploads or extracted video frames). */
+  images: Array<{ base64: string; mimeType: string }>;
+  /** Optional brand / product name provided by the user. */
+  brand?: string;
+  /** Optional target audience description provided by the user. */
+  audience?: string;
+}
+
+/**
+ * Calls Claude claude-sonnet-4-6 with Vision input and forces a tool call whose
+ * schema matches `analysisResultSchema`. Returns the validated result.
+ */
+export async function analyzeAdLive(input: AnalyzeInput): Promise<AnalysisResult> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error("ANTHROPIC_API_KEY is not set. Set ANALYZER_MODE=mock to bypass.");
+  }
+
+  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+  const client = new Anthropic({ apiKey });
+
+  // Build the content array: images + optional text context
+  const content: Anthropic.MessageCreateParams["messages"][0]["content"] = [];
+
+  for (const img of input.images) {
+    content.push({
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: img.mimeType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+        data: img.base64,
+      },
+    });
+  }
+
+  let userText = "Analysiere diese TikTok-Ad anhand der beschriebenen Kriterien.";
+  if (input.brand) userText += `\n\nBrand/Produkt: ${input.brand}`;
+  if (input.audience) userText += `\nZielgruppe: ${input.audience}`;
+  if (input.images.length > 1) {
+    userText += `\n\nDie ${input.images.length} Bilder sind Keyframes aus einem Video (chronologisch). Bewerte das Gesamtvideo basierend auf diesen Frames.`;
+  }
+
+  content.push({ type: "text", text: userText });
+
+  const response = await client.messages.create({
+    model,
+    max_tokens: 2048,
+    system: ANALYZER_SYSTEM_PROMPT,
+    tools: [ANALYZER_TOOL],
+    tool_choice: { type: "tool", name: "tiktok_ad_analysis" },
+    messages: [{ role: "user", content }],
+  });
+
+  // Extract tool call input
+  const toolBlock = response.content.find((b) => b.type === "tool_use");
+  if (!toolBlock || toolBlock.type !== "tool_use") {
+    throw new Error("Claude did not return a tool call. Unexpected response shape.");
+  }
+
+  // Validate against our Zod schema (belt-and-suspenders)
+  const parsed = analysisResultSchema.safeParse(toolBlock.input);
+  if (!parsed.success) {
+    console.error("[analyzer] Anthropic output failed validation:", parsed.error);
+    throw new Error("Analysis output did not match expected schema.");
+  }
+
+  return parsed.data;
+}
 
 /**
  * Returns a mock analysis result for development / demo purposes.
