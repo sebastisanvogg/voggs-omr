@@ -33,6 +33,9 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className="flex min-h-screen flex-col">
+        <a href="#analyzer" className="skip-link">
+          Zum Ad Analyzer springen
+        </a>
         <div className="flex-1">{children}</div>
         <Footer />
         <ConsentBanner />
