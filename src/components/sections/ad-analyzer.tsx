@@ -2,12 +2,14 @@
 
 import { useState, useRef } from "react";
 import { UploadBox } from "@/components/analyzer/upload-box";
+import { UploadPreview } from "@/components/analyzer/upload-preview";
 import { ProgressSteps } from "@/components/analyzer/progress-steps";
 import { ResultCard } from "@/components/analyzer/result-card";
-import { LeadDialog } from "@/components/lead-dialog";
+import { OptInDialog } from "@/components/opt-in-dialog";
+import { ExitIntentDialog } from "@/components/exit-intent-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RotateCcw } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import type { AnalysisResult } from "@/lib/validation";
 
 type Phase = "idle" | "ready" | "analyzing" | "done" | "error";
@@ -19,7 +21,8 @@ export function AdAnalyzer() {
   const [audience, setAudience] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [leadOpen, setLeadOpen] = useState(false);
+  const [optInOpen, setOptInOpen] = useState(false);
+  const [reportUnlocked, setReportUnlocked] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
   const handleFile = (f: File) => {
@@ -68,52 +71,24 @@ export function AdAnalyzer() {
     setError(null);
     setBrand("");
     setAudience("");
+    setReportUnlocked(false);
   };
 
   return (
     <section
       ref={sectionRef}
       id="analyzer"
-      className="scroll-mt-20 py-16 sm:py-24"
+      className="scroll-mt-20 px-6 pb-16"
     >
-      <div className="mx-auto max-w-2xl px-4 sm:px-6">
-        <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-accent">
-            TikTok Ad Analyzer
-          </p>
-          <h2 className="mt-2 text-3xl font-bold sm:text-4xl">
-            Funktioniert deine Ad auf TikTok?
-          </h2>
-          <p className="mt-3 text-muted">
-            Lade deine Ad hoch und finde es in 30 Sekunden heraus.
-            KI-gestützte Analyse nach dem Hook-Trust-CTA Framework.
-          </p>
-        </div>
-
-        <div className="mt-10 rounded-xl border border-border bg-surface/60 p-6">
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-glow">
           {/* Phase: idle — show upload box */}
           {phase === "idle" && <UploadBox onFile={handleFile} />}
 
           {/* Phase: ready — file selected, optional fields, start button */}
           {phase === "ready" && file && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 rounded-md border border-border bg-surface-2 px-4 py-3 text-sm">
-                <Sparkles className="h-5 w-5 text-accent" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(file.size / 1024 / 1024).toFixed(1)} MB · {file.type}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="text-muted hover:text-foreground"
-                  onClick={reset}
-                  aria-label="Datei entfernen"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-              </div>
+              <UploadPreview file={file} onRemove={reset} />
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -156,7 +131,8 @@ export function AdAnalyzer() {
           {phase === "done" && result && (
             <ResultCard
               result={result}
-              onRequestReport={() => setLeadOpen(true)}
+              unlocked={reportUnlocked}
+              onRequestReport={() => setOptInOpen(true)}
             />
           )}
 
@@ -185,12 +161,23 @@ export function AdAnalyzer() {
         )}
       </div>
 
-      {/* Lead dialog for report request */}
-      <LeadDialog
-        open={leadOpen}
-        onOpenChange={setLeadOpen}
+      <OptInDialog
+        open={optInOpen}
+        onOpenChange={setOptInOpen}
+        params={{
+          score: result?.confidence_score,
+          verdict: result?.verdict,
+          interest: "analyzer_report",
+          source: "analyzer",
+        }}
+        onComplete={() => setReportUnlocked(true)}
         defaultInterests={["analyzer_report"]}
         analyzerScore={result?.confidence_score}
+      />
+
+      <ExitIntentDialog
+        armed={phase === "done" && result !== null && !reportUnlocked}
+        onUnlock={() => setOptInOpen(true)}
       />
     </section>
   );

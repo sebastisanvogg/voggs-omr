@@ -45,3 +45,6 @@ screenshots/
 # editor
 .vscode/
 .idea/
+
+# claude code local settings
+.claude/settings.local.json

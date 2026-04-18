@@ -95,6 +95,7 @@ describe("analysisResultSchema", () => {
     verdict: "ready" as const,
     findings: [
       { dimension: "hook" as const, score: 80, comment: "Guter Hook, greift sofort." },
+      { dimension: "trust" as const, score: 68, comment: "Kleines Trust-Signal vorhanden." },
       { dimension: "pacing" as const, score: 65, comment: "Schnitt ist okay." },
       { dimension: "sound" as const, score: 70, comment: "Musik passt." },
     ],

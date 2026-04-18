@@ -20,11 +20,14 @@ function getMockAnalysisResult() {
     verdict: base >= 70 ? ("ready" as const) : ("needs-work" as const),
     findings: [
       { dimension: "hook" as const, score: Math.min(100, base + randOffset()), comment: "Hook comment." },
+      { dimension: "trust" as const, score: Math.min(100, base + randOffset()), comment: "Trust comment." },
       { dimension: "pacing" as const, score: Math.min(100, base + randOffset()), comment: "Pacing comment." },
+      { dimension: "retention" as const, score: Math.min(100, base + randOffset()), comment: "Retention comment." },
       { dimension: "sound" as const, score: Math.min(100, base + randOffset()), comment: "Sound comment." },
       { dimension: "captions" as const, score: Math.min(100, base + randOffset()), comment: "Captions comment." },
       { dimension: "cta" as const, score: Math.min(100, base + randOffset()), comment: "CTA comment." },
       { dimension: "native_feel" as const, score: Math.min(100, base + randOffset()), comment: "Native feel." },
+      { dimension: "trend_alignment" as const, score: Math.min(100, base + randOffset()), comment: "Trend alignment comment." },
     ],
     recommendations: [
       "Empfehlung eins.",
@@ -69,6 +72,7 @@ describe("score boundary validation", () => {
       verdict: "not-tiktok",
       findings: [
         { dimension: "hook", score: 0, comment: "Kein Hook erkennbar." },
+        { dimension: "trust", score: 0, comment: "Kein Trust-Signal." },
         { dimension: "pacing", score: 0, comment: "Kein Schnitt vorhanden." },
         { dimension: "sound", score: 0, comment: "Kein Sound vorhanden." },
       ],
@@ -83,6 +87,7 @@ describe("score boundary validation", () => {
       verdict: "ready",
       findings: [
         { dimension: "hook", score: 100, comment: "Perfekter Hook, greift sofort." },
+        { dimension: "trust", score: 100, comment: "Starkes Trust-Signal." },
         { dimension: "pacing", score: 100, comment: "Schnitt ist optimal." },
         { dimension: "sound", score: 100, comment: "Sound perfekt abgemischt." },
       ],

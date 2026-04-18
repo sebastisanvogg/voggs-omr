@@ -1,58 +1,55 @@
-import Image from "next/image";
-import { TrendingUp, Users, Zap } from "lucide-react";
+import { TrendingUp, Users, Zap, Rocket } from "lucide-react";
 
 const CASES = [
   {
     icon: <TrendingUp className="h-5 w-5" />,
-    kpi: "2,3 Mio. € Ad Spend",
-    image: "/testimonials/case-carly.png",
-    client: "Carly Connected Car",
-    description:
-      "Automotive-Tech im DACH-Markt: Nahezu 100% Conversion Objective auf TikTok. Kein Awareness-Play — reine Performance-Skalierung mit 6-stelligen Tagesbudgets.",
-  },
-  {
-    icon: <Users className="h-5 w-5" />,
-    kpi: "CPM 40–60% unter Meta",
-    image: "/testimonials/case-turtle-beach.png",
-    client: "Turtle Beach",
-    description:
-      "Global Performance Marketing mit 8–15 Sek. Attention Time vs. 1–3 Sek. bei klassischen Feed Ads. High-performing Content für den Gaming-Markt.",
+    brand: "CARLY",
+    handle: "Connected Car · 2025",
+    tag: "Performance Skalierung",
+    kpis: [
+      { value: "2,37 Mio. €", label: "Ad Spend" },
+      { value: "~100%", label: "Conv. Objective" },
+      { value: "50 €", label: "CPA Winner" },
+    ],
   },
   {
     icon: <Zap className="h-5 w-5" />,
-    kpi: "50 € CPA bei 66K Spend",
-    image: "/testimonials/case-qlf.png",
-    client: "Quantum Leap Fitness",
-    description:
-      "Ein einzelnes Creative: 66.480 € Spend, 1.000 Complete Payments, CPA 50,29 €. Kein Fatigue-Crash dank systematischem Winner-Scaling.",
+    brand: "Winner Creative",
+    handle: "66.480 € Single-Ad Spend",
+    tag: "Creative Resilience",
+    kpis: [
+      { value: "1.000", label: "Payments" },
+      { value: "8,47 €", label: "CPM" },
+      { value: "76", label: "Conv. Score" },
+    ],
+  },
+  {
+    icon: <Users className="h-5 w-5" />,
+    brand: "Turtle Beach",
+    handle: "Gaming · Global",
+    tag: "Creative + Scale",
+    kpis: [
+      { value: "+95,3%", label: "CTR" },
+      { value: "+34,8%", label: "Conv. Rate" },
+      { value: "+95,5%", label: "Budget" },
+    ],
+  },
+  {
+    icon: <Rocket className="h-5 w-5" />,
+    brand: "TikTok vs. Meta",
+    handle: "DACH Benchmark",
+    tag: "Plattform-Vorteil",
+    kpis: [
+      { value: "–40–60%", label: "CPM" },
+      { value: "8–15 Sek.", label: "Attention" },
+      { value: "3–5×", label: "vs. Feed" },
+    ],
   },
 ];
 
 const TESTIMONIALS = [
   {
-    quote:
-      "Sehr angenehme und effiziente Zusammenarbeit mit VOGGS und dem Team! Auch über Landesgrenzen hinweg und rein digital haben wir sehr gute Erfahrungen gemacht!",
-    name: "Christian Schwarz",
-    role: "Performance Marketing Manager",
-    company: "Magenta Telekom",
-  },
-  {
-    quote:
-      "Wir würden Voggs GmbH als Berater und Service weiterempfehlen, weil wir mit dem Ergebnis der Zusammenarbeit sehr zufrieden sind.",
-    name: "Polina Micheva",
-    role: "Team Lead Performance Marketing",
-    company: "YFood",
-  },
-  {
-    quote:
-      "Das gesamte Team sind absolut kompetent, gut vernetzt und immer auf dem neuesten Stand der Dinge. Absolut empfehlenswert!",
-    name: "Sjard Roscher",
-    role: "CEO",
-    company: "Quantum Leap Fitness",
-  },
-  {
-    quote:
-      "Aus unserem Marketing nicht mehr wegzudenken!",
+    quote: "Aus unserem Marketing nicht mehr wegzudenken!",
     name: "Christian Bozic",
     role: "Head of Marketing",
     company: "Carly Connected Car",
@@ -66,118 +63,83 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "Super happy to be working with VOGGS for our paid media content. They have been a great partner in getting high performing content.",
+      "Super happy to be working with VOGGS for our paid media content.",
     name: "Bram Colaris",
-    role: "Director, Global Performance Marketing & Social Media",
+    role: "Director, Global Performance Marketing",
     company: "Turtle Beach",
   },
   {
     quote:
-      "Ich war überrascht von solch einem unglaublich agilen und intelligenten Ansatz, der mit ausgezeichneter Kundenbetreuung kombiniert wurde.",
-    name: "Marina Guarino",
-    role: "Group Marketing",
-    company: "Generali",
+      "Wir würden Voggs GmbH als Berater und Service weiterempfehlen.",
+    name: "Polina Micheva",
+    role: "Team Lead Performance Marketing",
+    company: "YFood",
   },
-  {
-    quote:
-      "Ich kann die Zusammenarbeit mit dem gesamten VOGGS Team uneingeschränkt empfehlen. Die Zusammenarbeit ist hervorragend.",
-    name: "Fadi Siouri",
-    role: "CEO",
-    company: "Vernasche die Welt",
-  },
-  {
-    quote:
-      "Wir haben bereits einige Projekte gemeinsam mit dem VOGGS Team vollendet und hatten jedes Mal nicht nur jede Menge Spaß.",
-    name: "Jonas Nagel",
-    role: "CEO",
-    company: "MAINMENT",
-  },
-];
-
-const CLIENT_LOGOS = [
-  { src: "/logos/carly.png", alt: "Carly" },
-  { src: "/logos/hellofresh.png", alt: "HelloFresh" },
-  { src: "/logos/turtle-beach.png", alt: "Turtle Beach" },
-  { src: "/logos/true-fruits.png", alt: "true fruits" },
-  { src: "/logos/babbel.png", alt: "Babbel" },
-  { src: "/logos/tom-tailor.png", alt: "TOM TAILOR" },
-  { src: "/logos/magenta.png", alt: "Magenta Telekom" },
-  { src: "/logos/yfood.png", alt: "YFood" },
-  { src: "/logos/urlaubsguru.png", alt: "Urlaubsguru" },
-  { src: "/logos/westwing.png", alt: "Westwing" },
 ];
 
 export function SocialProof() {
   return (
-    <section className="py-16 sm:py-24">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-accent">
-            Ergebnisse statt Versprechen
-          </p>
-          <h2 className="mt-2 text-3xl font-bold sm:text-4xl">
-            Warum VOGGSMEDIA?
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-muted">
-            4.93/5 Sterne bei 103 Bewertungen auf ProvenExpert.
-            Hier sind ein paar der Marken, mit denen wir arbeiten.
+    <section id="cases" className="scroll-mt-20 px-6 py-16 sm:py-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-10 flex items-end justify-between gap-6 flex-wrap">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-accent">
+              Case Studies
+            </p>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">
+              Zahlen, die <span className="text-accent">für sich sprechen</span>
+            </h2>
+          </div>
+          <p className="max-w-xs text-sm text-muted">
+            TikTok skaliert — wenn Creative stimmt und das System sitzt.
           </p>
         </div>
 
-        {/* Case snippets with images */}
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <div className="space-y-4">
           {CASES.map((c) => (
             <div
-              key={c.kpi}
-              className="group overflow-hidden rounded-xl border border-border bg-surface/60"
+              key={c.brand}
+              className="grid grid-cols-1 gap-6 rounded-2xl border border-border bg-surface p-6 transition-all hover:border-accent/40 hover:shadow-glow md:grid-cols-[260px_1fr] md:items-center md:gap-8"
             >
-              <div className="relative h-48 overflow-hidden">
-                <Image
-                  src={c.image}
-                  alt={c.client}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-              <div className="p-5">
-                <div className="flex items-center gap-2 text-accent">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
                   {c.icon}
-                  <span className="text-lg font-bold">{c.kpi}</span>
                 </div>
-                <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                  {c.client}
-                </p>
-                <p className="mt-2 text-sm text-muted">{c.description}</p>
+                <div>
+                  <div className="text-base font-bold">{c.brand}</div>
+                  <div className="text-xs text-muted">{c.handle}</div>
+                  <span className="mt-2 inline-flex rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                    {c.tag}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                {c.kpis.map((k) => (
+                  <div key={k.label} className="text-center md:text-left">
+                    <div className="text-xl font-extrabold tracking-tight sm:text-2xl">
+                      {k.value}
+                    </div>
+                    <div className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {k.label}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Client logos strip */}
-        <div className="mt-14 flex flex-wrap items-center justify-center gap-x-10 gap-y-6 opacity-50 grayscale brightness-200">
-          {CLIENT_LOGOS.map((logo) => (
-            <Image
-              key={logo.alt}
-              src={logo.src}
-              alt={logo.alt}
-              width={100}
-              height={28}
-              className="h-6 w-auto object-contain"
-            />
-          ))}
-        </div>
-
-        {/* Testimonials */}
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {TESTIMONIALS.map((t) => (
             <blockquote
               key={t.name}
               className="rounded-xl border border-border bg-surface/60 p-5"
             >
-              <p className="text-sm italic text-muted leading-relaxed">
+              <p className="text-sm italic leading-relaxed text-muted">
                 &ldquo;{t.quote}&rdquo;
               </p>
-              <footer className="mt-4 text-sm">
+              <footer className="mt-4 text-xs">
                 <span className="font-medium text-foreground">{t.name}</span>
                 <br />
                 <span className="text-muted-foreground">

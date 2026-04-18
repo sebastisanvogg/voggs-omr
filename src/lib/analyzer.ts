@@ -97,10 +97,22 @@ export function getMockAnalysisResult(): AnalysisResult {
           "Der Hook greift in den ersten 1,5 Sekunden — guter Einstieg mit Bewegung und Text-Overlay.",
       },
       {
+        dimension: "trust",
+        score: Math.min(100, base + randOffset()),
+        comment:
+          "Kein sichtbarer Social Proof oder Trust-Signal. Teste Testimonial-Snippet oder Zahlen-Overlay.",
+      },
+      {
         dimension: "pacing",
         score: Math.min(100, base + randOffset()),
         comment:
           "Schnittfrequenz passt zum TikTok-Rhythmus. Kleinere Pausen um Sekunde 8 könnten kürzer sein.",
+      },
+      {
+        dimension: "retention",
+        score: Math.min(100, base + randOffset()),
+        comment:
+          "Spannungsbogen trägt bis etwa Sekunde 12, danach Drop-Off-Risiko. Reveal früher platzieren.",
       },
       {
         dimension: "sound",
@@ -126,11 +138,19 @@ export function getMockAnalysisResult(): AnalysisResult {
         comment:
           "Wirkt überwiegend nativ (Smartphone-Optik). Leichte Brand-Polierung am Ende könnte reduziert werden.",
       },
+      {
+        dimension: "trend_alignment",
+        score: Math.min(100, base + randOffset()),
+        comment:
+          "Stil ist solide, aber ohne aktuelles TikTok-Format (POV, Reaction, Split-Screen). Ein Trend-Layer kann Reach +30% bringen.",
+      },
     ],
     recommendations: [
       "Teste einen stärkeren visuellen Hook in den ersten 0,5 Sekunden — z.B. Texteinblendung oder Gestik.",
+      "Baue ein Trust-Element ein: Testimonial-Snippet, konkrete Zahl oder Social-Proof-Overlay (Hook-Trust-CTA).",
       "Verkürze den Mittelteil um 2–3 Sekunden, um die Attention-Kurve flach zu halten.",
       "Platziere den CTA bereits ab Sekunde 10, nicht erst ganz am Ende.",
+      "Teste eine Trend-Variante: gleiche Message, aber als POV- oder Talking-Head-Format neu gebaut.",
     ],
   };
 }

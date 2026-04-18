@@ -11,36 +11,24 @@ interface FaqItem {
 
 const FAQS: FaqItem[] = [
   {
-    q: "Funktioniert TikTok wirklich für Performance-Kampagnen?",
-    a: "Ja. TikTok ist kein reiner Reichweiten-Kanal mehr. Wir managen Accounts mit 6-stelligen Tagesbudgets und nahezu 100% Conversion Objective. Die CPMs liegen im DACH-Raum 40–60% unter Meta, und die Attention Time ist 3–5x höher als bei Feed Ads.",
+    q: "Was macht der Ad Analyzer?",
+    a: "Du lädst eine Ad hoch. Die KI bewertet Hook, Trust und CTA — mit Confidence Score und konkreten Verbesserungsvorschlägen.",
   },
   {
-    q: "Was genau macht der Ad Analyzer?",
-    a: "Du lädst ein Bild oder Video hoch. Unsere KI (basierend auf Claude von Anthropic) bewertet dein Creative nach TikTok-spezifischen Kriterien: Hook (erste 1,5 Sek.), Pacing, Sound, Captions, CTA und Native-Feel. Du bekommst einen Confidence Score und konkrete Verbesserungsvorschläge.",
+    q: "Was passiert mit meiner Datei?",
+    a: "Einmalige Analyse, Löschung nach max. 24 Stunden. Details in der Datenschutzerklärung.",
   },
   {
-    q: "Was passiert mit meiner hochgeladenen Datei?",
-    a: "Die Datei wird einmalig zur Analyse verwendet und nach maximal 24 Stunden automatisch gelöscht. Es findet keine dauerhafte Speicherung statt. Details findest du in unserer Datenschutzerklärung.",
+    q: "Was kosten die Audits?",
+    a: "Nichts. Kostenlos und unverbindlich.",
   },
   {
-    q: "Was kostet der Account- oder Creative-Audit?",
-    a: "Nichts. Beide Audits sind kostenlos und unverbindlich. Wir analysieren dein Setup, geben dir konkrete Empfehlungen — und du entscheidest, ob du mit uns weiterarbeiten möchtest.",
-  },
-  {
-    q: "Kann ich meine Meta-Ads einfach auf TikTok schalten?",
-    a: "Davon raten wir ab. TikTok ist ein eigenes Performance-Ökosystem mit anderen Regeln. Meta-Assets \"reinzuschmeißen\" ist der häufigste Fehler. Du brauchst eine eigene Creative Strategy: natives Storytelling, UGC-Feel, Hook-Trust-CTA Framework.",
+    q: "Meta-Ads einfach auf TikTok schalten?",
+    a: "Kein guter Plan. TikTok ist ein eigenes Performance-Ökosystem — nativ gebaute Creatives schlagen reingeschmissene Meta-Assets jedes Mal.",
   },
   {
     q: "Ab welchem Budget lohnt sich TikTok?",
-    a: "Unsere Empfehlung: Starte mit mindestens 5.000 € / Monat Ad Spend, damit du statistisch signifikante Learnings generierst. Mit unserem Testing-Matrix-Ansatz (4–8 Varianten pro Testlauf) brauchst du genug Budget pro Variante.",
-  },
-  {
-    q: "Wie läuft die Zusammenarbeit mit VOGGSMEDIA?",
-    a: "Wir sind Partner, keine klassische Agentur. Langfristig statt Quick-Fix. Typischer Ablauf: kostenloses Audit → Strategie-Call → Testing-Phase (4 Wochen) → Skalierung. Alles transparent und datengetrieben.",
-  },
-  {
-    q: "Was war die OMR Masterclass?",
-    a: "Am 5. Mai 2026 hat Sebastian Vogg (CEO, VOGGSMEDIA) auf der OMR eine Masterclass zu TikTok Ads gegeben: 'Unsere Learnings aus 6-stelligen Performance Tagesbudgets'. Diese Seite ist das Begleitmaterial dazu.",
+    a: "Ab ca. 5.000 € / Monat, damit die Testing-Matrix (4–8 Varianten pro Run) statistisch trägt.",
   },
 ];
 
@@ -52,18 +40,18 @@ export function Faq() {
   };
 
   return (
-    <section className="py-16 sm:py-24">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+    <section id="faq" className="scroll-mt-20 px-6 py-16 sm:py-20">
+      <div className="mx-auto max-w-3xl">
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-accent">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-accent">
             FAQ
           </p>
-          <h2 className="mt-2 text-3xl font-bold sm:text-4xl">
-            Häufige Fragen
+          <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            Häufige <span className="text-accent">Fragen</span>
           </h2>
         </div>
 
-        <div className="mt-10 divide-y divide-border rounded-xl border border-border">
+        <div className="mt-8 divide-y divide-border rounded-2xl border border-border bg-surface">
           {FAQS.map((item, i) => (
             <div key={i}>
               <button

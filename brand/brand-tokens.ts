@@ -12,21 +12,20 @@
 export const brandTokens = {
   colors: {
     // Surfaces
-    background: "#0A0A0B",          // page background (near-black, slight warmth)
-    surface: "#141416",              // elevated cards, dialogs
-    "surface-2": "#1C1C20",          // hover / tertiary
-    border: "#26262C",               // hairlines, dividers
-    "border-strong": "#3A3A42",      // emphasized borders, focus rings (low-contrast)
+    background: "#080808",          // page background (voggs-website parity)
+    surface: "#111111",              // elevated cards, dialogs
+    "surface-2": "#181818",          // hover / tertiary
+    border: "rgba(255,255,255,0.07)", // hairlines, dividers
+    "border-strong": "rgba(255,255,255,0.15)", // emphasized borders
 
     // Foreground
-    foreground: "#F5F5F7",           // primary text on dark background
-    muted: "#A1A1AA",                // secondary text
-    "muted-foreground": "#71717A",   // tertiary text / labels
+    foreground: "#FFFFFF",           // primary text on dark background
+    muted: "#A0A0A0",                // secondary text
+    "muted-foreground": "#606060",   // tertiary text / labels
 
-    // Accent (the "TikTok-funktioniert" red — swap to magenta/pink in 5 min by
-    // editing these three values).
-    accent: "#FF3B30",               // primary red — CTAs, highlights
-    "accent-hover": "#FF5A50",       // hover state
+    // Accent (the VOGGSMEDIA red)
+    accent: "#E8202A",               // primary red — CTAs, highlights
+    "accent-hover": "#F0222C",       // hover state
     "accent-foreground": "#FFFFFF",  // text on accent surfaces
 
     // Status
@@ -56,7 +55,7 @@ export const brandTokens = {
     DEFAULT: "0 4px 14px rgba(0,0,0,0.45)",
     md: "0 8px 24px rgba(0,0,0,0.5)",
     lg: "0 16px 40px rgba(0,0,0,0.55)",
-    glow: "0 0 24px rgba(255,59,48,0.35)",
+    glow: "0 0 30px rgba(232,32,42,0.25)",
   },
 
   fonts: {

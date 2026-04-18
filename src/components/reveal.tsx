@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 interface RevealProps {
   children: ReactNode;
@@ -10,14 +10,17 @@ interface RevealProps {
   delay?: number;
 }
 
-/**
- * Scroll-triggered reveal wrapper. Fades up on viewport entry.
- * Respects prefers-reduced-motion (renders immediately without animation).
- */
 export function Reveal({ children, className, delay = 0 }: RevealProps) {
   const prefersReduced = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
 
-  if (prefersReduced) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // SSR + first client paint: render visible. Prevents the "everything is
+  // black" failure mode if framer-motion's whileInView never fires.
+  if (prefersReduced || !mounted) {
     return <div className={className}>{children}</div>;
   }
 

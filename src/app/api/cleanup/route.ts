@@ -65,3 +65,7 @@ export async function POST(req: NextRequest) {
   console.log(`[cleanup] Deleted ${deleted} old file(s).`);
   return NextResponse.json({ ok: true, deleted });
 }
+
+// Vercel Cron triggers routes with GET. Accept both verbs so the same
+// secret-protected handler works for scheduled runs and ad-hoc curls.
+export const GET = POST;

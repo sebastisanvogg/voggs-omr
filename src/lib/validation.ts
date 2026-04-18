@@ -68,11 +68,14 @@ export type LeadFormInput = z.input<typeof leadInputSchema>;
 
 export const FINDING_DIMENSIONS = [
   "hook",
+  "trust",
   "pacing",
+  "retention",
   "sound",
   "captions",
   "cta",
   "native_feel",
+  "trend_alignment",
 ] as const;
 export type FindingDimension = (typeof FINDING_DIMENSIONS)[number];
 
@@ -88,7 +91,7 @@ export const findingSchema = z.object({
 export const analysisResultSchema = z.object({
   confidence_score: z.number().int().min(0).max(100),
   verdict: z.enum(VERDICTS),
-  findings: z.array(findingSchema).min(3).max(6),
+  findings: z.array(findingSchema).min(4).max(9),
   recommendations: z.array(z.string().min(4).max(280)).min(3).max(5),
 });
 

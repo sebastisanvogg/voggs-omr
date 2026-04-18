@@ -79,25 +79,58 @@ with zero API keys:
 
 See `.env.example` for the full list with comments.
 
-## Deploy to Vercel
+## Deploy to Vercel (on `omr.voggs.net`)
 
 1. Push this repo to GitHub.
 2. Create a new Vercel project → import → select this repo.
 3. Add environment variables in Vercel project settings:
+   - `NEXT_PUBLIC_SITE_URL=https://omr.voggs.net`
    - `ANALYZER_MODE=live`
    - `ANTHROPIC_API_KEY=sk-ant-...`
    - `NEXT_PUBLIC_SUPABASE_URL=https://...supabase.co`
    - `SUPABASE_SERVICE_ROLE_KEY=...`
    - `RESEND_API_KEY=re_...`
    - `BLOB_READ_WRITE_TOKEN=...`
+   - `NEXT_PUBLIC_PERSPECTIVE_REPORT_URL=https://vm-media.perspectivefunnel.com/voggs/page_iquhkx`
+   - `NEXT_PUBLIC_PERSPECTIVE_AUDIT_URL=https://vm-media.perspectivefunnel.com/voggs/page_b2gdvt/`
+   - `NEXT_PUBLIC_PERSPECTIVE_FUNNEL_URL=https://vm-media.perspectivefunnel.com/voggs/page_b2gdvt/`
    - (optional) `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`
-   - (optional) `CLEANUP_CRON_SECRET=your-secret`
-4. Add a **Cron Job** in Vercel for cleanup:
-   - Path: `/api/cleanup`
-   - Schedule: `0 * * * *` (hourly)
-   - Header: `Authorization: Bearer <your CLEANUP_CRON_SECRET>`
+   - `CLEANUP_CRON_SECRET=<random-long-string>`
+4. `vercel.json` already wires a Cron Job at `/api/cleanup` hourly — no UI
+   setup needed.
 5. Apply `supabase/schema.sql` to your Supabase project.
-6. Deploy. Done.
+6. Custom domain: Vercel → Project → Settings → Domains → add
+   `omr.voggs.net`. Vercel shows a CNAME target; add that as a DNS record
+   (see "DNS on Cloudflare" below).
+7. Deploy. Done.
+
+## DNS on Cloudflare (for `omr.voggs.net`)
+
+Assuming `voggs.net` is on Cloudflare:
+
+1. Cloudflare dashboard → `voggs.net` zone → **DNS → Records** → Add record
+   - Type: `CNAME`
+   - Name: `omr`
+   - Target: `cname.vercel-dns.com` (Vercel shows the exact target in the
+     Domains panel)
+   - Proxy status: **DNS only** (orange cloud OFF — Vercel issues its own
+     SSL certificate, and the orange cloud interferes with Vercel's
+     domain-verification flow)
+   - TTL: Auto
+2. Wait ~1–5 min for propagation. Vercel marks the domain as "Valid
+   Configuration".
+3. Test: `https://omr.voggs.net` → the OMR salespage.
+
+## Framer redirect `voggs.net/omr` → `omr.voggs.net`
+
+In your Framer project for `voggs.net`:
+
+- Settings → **Redirects** → new rule:
+  - From: `/omr`
+  - To: `https://omr.voggs.net`
+  - Type: `301 (Permanent)`
+
+QR codes can now point at `voggs.net/omr` — visitors land on the Vercel app.
 
 ## How to Swap Brand
 
