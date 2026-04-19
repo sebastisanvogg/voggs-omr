@@ -38,13 +38,31 @@ export function AdAnalyzer() {
     setError(null);
 
     try {
-      // Vercel serverless request bodies cap at 4.5 MB on Hobby. Anything
-      // larger must go through Blob client-upload (browser → Blob directly),
-      // then we POST just the URL to /api/analyze-ad.
       const DIRECT_UPLOAD_LIMIT = 4 * 1024 * 1024;
+      const isVideo = file.type.startsWith("video/");
       let res: Response;
 
-      if (file.size > DIRECT_UPLOAD_LIMIT) {
+      if (isVideo) {
+        // Videos: extract frames in the browser via canvas and POST only
+        // the small frame JPEGs. Skips Vercel Blob entirely — we never ship
+        // the full video to the server.
+        const { extractVideoFramesInBrowser } = await import("@/lib/client-frames");
+        const frames = await extractVideoFramesInBrowser(file);
+        if (frames.length === 0) {
+          throw new Error("Keine Frames aus dem Video extrahiert.");
+        }
+        res = await fetch("/api/analyze-ad", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            frames,
+            mimeType: "image/jpeg",
+            brand: brand.trim() || undefined,
+            audience: audience.trim() || undefined,
+          }),
+        });
+      } else if (file.size > DIRECT_UPLOAD_LIMIT) {
+        // Large single image → Blob client-upload, then send URL.
         const { upload } = await import("@vercel/blob/client");
         const uploadedBlob = await upload(
           `uploads/${Date.now()}-${file.name}`,
@@ -55,7 +73,6 @@ export function AdAnalyzer() {
             clientPayload: file.type,
           }
         );
-
         res = await fetch("/api/analyze-ad", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -67,15 +84,12 @@ export function AdAnalyzer() {
           }),
         });
       } else {
+        // Small image → FormData directly.
         const form = new FormData();
         form.append("file", file);
         if (brand.trim()) form.append("brand", brand.trim());
         if (audience.trim()) form.append("audience", audience.trim());
-
-        res = await fetch("/api/analyze-ad", {
-          method: "POST",
-          body: form,
-        });
+        res = await fetch("/api/analyze-ad", { method: "POST", body: form });
       }
 
       const body = await safeParseJson(res);
