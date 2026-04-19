@@ -20,6 +20,23 @@ interface AnalyzeInput {
 }
 
 export async function POST(req: NextRequest) {
+  try {
+    return await handle(req);
+  } catch (err) {
+    console.error("[analyze-ad] unhandled error:", err);
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error
+            ? err.message
+            : "Interner Fehler. Bitte erneut versuchen.",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+async function handle(req: NextRequest) {
   // --- Rate limit ---
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

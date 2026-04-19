@@ -5,93 +5,68 @@ import path from "node:path";
 import os from "node:os";
 import Ffmpeg from "fluent-ffmpeg";
 
-// ffmpeg-static ships only the ffmpeg binary; ffprobe is a separate package.
-// Both must be wired explicitly because serverless environments (Vercel) do
-// not have either on PATH. The requires are safe here (server-only module,
-// Node runtime).
+// ffmpeg-static ships a binary; tell fluent-ffmpeg where to find it.
+// We intentionally do NOT depend on ffprobe here — on Vercel's serverless
+// runtime ffprobe adds a second native binary dependency that can fail to
+// bundle. Instead we seek to fixed timestamps and silently drop seeks that
+// land past the end of the video.
 const ffmpegPath = String(require("ffmpeg-static"));
-const ffprobeInstaller = require("@ffprobe-installer/ffprobe") as {
-  path: string;
-};
 Ffmpeg.setFfmpegPath(ffmpegPath);
-Ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
-const MAX_FRAMES = 6;
 const JPEG_QUALITY = 2; // 2 = high quality, 31 = low
 
+// Seek points (seconds). A 30-second ad will produce frames from the first
+// five; a 5-second ad will produce frames from the first two. ffmpeg returns
+// a non-zero error for seeks past the end — we swallow those.
+const SEEK_POINTS = [0.5, 2, 5, 10, 20, 45] as const;
+
 /**
- * Extracts up to 6 evenly-spaced key frames from a video file stored at
- * `inputPath`. Returns an array of { base64, mimeType } ready for the
- * Anthropic Vision API.
- *
- * The caller is responsible for cleaning up the temp directory afterwards.
+ * Extracts up to 6 key frames from a video file. Returns base64-encoded JPEGs
+ * ready for the Anthropic Vision API. The caller owns the temp dir cleanup
+ * for the input file; we manage our own scratch dir internally.
  */
 export async function extractFrames(
   inputPath: string
 ): Promise<Array<{ base64: string; mimeType: "image/jpeg" }>> {
   const outDir = await fs.mkdtemp(path.join(os.tmpdir(), "vframes-"));
 
-  // Get duration to calculate seek points
-  const durationSec = await getVideoDuration(inputPath);
-  const frameCount = Math.min(MAX_FRAMES, Math.max(2, Math.ceil(durationSec / 10)));
-
-  // Generate frames at evenly spaced intervals
-  const seekPoints: number[] = [];
-  for (let i = 0; i < frameCount; i++) {
-    seekPoints.push((durationSec / (frameCount + 1)) * (i + 1));
-  }
-
-  const outPaths: string[] = [];
-
-  for (let i = 0; i < seekPoints.length; i++) {
-    const outPath = path.join(outDir, `frame_${i}.jpg`);
-    await extractSingleFrame(inputPath, seekPoints[i], outPath);
-    outPaths.push(outPath);
-  }
-
-  // Read frames into base64
-  const frames: Array<{ base64: string; mimeType: "image/jpeg" }> = [];
-  for (const fp of outPaths) {
-    try {
-      const buf = await fs.readFile(fp);
-      frames.push({ base64: buf.toString("base64"), mimeType: "image/jpeg" });
-    } catch {
-      // Skip frames that failed
+  try {
+    const frames: Array<{ base64: string; mimeType: "image/jpeg" }> = [];
+    for (let i = 0; i < SEEK_POINTS.length; i++) {
+      const outPath = path.join(outDir, `frame_${i}.jpg`);
+      const ok = await extractSingleFrame(inputPath, SEEK_POINTS[i], outPath);
+      if (!ok) continue;
+      try {
+        const buf = await fs.readFile(outPath);
+        if (buf.length > 0) {
+          frames.push({ base64: buf.toString("base64"), mimeType: "image/jpeg" });
+        }
+      } catch {
+        // Frame missing — past end of video, skip.
+      }
     }
+    return frames;
+  } finally {
+    await fs.rm(outDir, { recursive: true, force: true }).catch(() => {});
   }
-
-  // Cleanup
-  await fs.rm(outDir, { recursive: true, force: true }).catch(() => {});
-
-  return frames;
-}
-
-function getVideoDuration(filePath: string): Promise<number> {
-  return new Promise((resolve, reject) => {
-    Ffmpeg.ffprobe(filePath, (err, metadata) => {
-      if (err) return reject(err);
-      const duration = metadata.format?.duration ?? 30;
-      resolve(Math.min(duration, 120)); // cap at 2 min to avoid huge processing
-    });
-  });
 }
 
 function extractSingleFrame(
   inputPath: string,
   seekSec: number,
   outputPath: string
-): Promise<void> {
-  return new Promise((resolve, reject) => {
+): Promise<boolean> {
+  return new Promise((resolve) => {
     Ffmpeg(inputPath)
       .seekInput(seekSec)
       .outputOptions([
         "-frames:v 1",
         `-q:v ${JPEG_QUALITY}`,
-        "-vf scale=720:-2", // resize to 720px wide, keep aspect ratio
+        "-vf scale=720:-2",
       ])
       .output(outputPath)
-      .on("end", () => resolve())
-      .on("error", (err) => reject(err))
+      .on("end", () => resolve(true))
+      .on("error", () => resolve(false))
       .run();
   });
 }
