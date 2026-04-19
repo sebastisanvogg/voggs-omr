@@ -82,17 +82,20 @@ export type FindingDimension = (typeof FINDING_DIMENSIONS)[number];
 export const VERDICTS = ["ready", "needs-work", "not-tiktok"] as const;
 export type Verdict = (typeof VERDICTS)[number];
 
+// Tolerant schema: Claude occasionally returns a decimal score like 78.4,
+// a dimension label that isn't in our enum, or a terse comment. We coerce
+// numbers to int and keep the gate on the structure we actually depend on.
 export const findingSchema = z.object({
-  dimension: z.enum(FINDING_DIMENSIONS),
-  score: z.number().int().min(0).max(100),
-  comment: z.string().min(4).max(280),
+  dimension: z.string().min(1).transform((d) => d.toLowerCase().replace(/[\s-]+/g, "_")),
+  score: z.number().min(0).max(100).transform((n) => Math.round(n)),
+  comment: z.string().min(1).max(500),
 });
 
 export const analysisResultSchema = z.object({
-  confidence_score: z.number().int().min(0).max(100),
+  confidence_score: z.number().min(0).max(100).transform((n) => Math.round(n)),
   verdict: z.enum(VERDICTS),
-  findings: z.array(findingSchema).min(4).max(9),
-  recommendations: z.array(z.string().min(4).max(280)).min(3).max(5),
+  findings: z.array(findingSchema).min(3).max(12),
+  recommendations: z.array(z.string().min(1).max(500)).min(2).max(8),
 });
 
 export type AnalysisResult = z.infer<typeof analysisResultSchema>;

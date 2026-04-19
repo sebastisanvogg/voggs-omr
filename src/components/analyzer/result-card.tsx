@@ -56,7 +56,10 @@ function gaugeGradient(score: number): string {
 
 const TEASER_COUNT = 3;
 
-function FindingRow({ f }: { f: { dimension: FindingDimension; score: number; comment: string } }) {
+function FindingRow({ f }: { f: { dimension: string; score: number; comment: string } }) {
+  const label =
+    DIMENSION_LABELS[f.dimension as FindingDimension] ??
+    f.dimension.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   return (
     <div className="flex items-start gap-3 p-3">
       <span
@@ -68,9 +71,7 @@ function FindingRow({ f }: { f: { dimension: FindingDimension; score: number; co
         {f.score}
       </span>
       <div>
-        <p className="text-sm font-medium">
-          {DIMENSION_LABELS[f.dimension] ?? f.dimension}
-        </p>
+        <p className="text-sm font-medium">{label}</p>
         <p className="text-xs text-muted">{f.comment}</p>
       </div>
     </div>

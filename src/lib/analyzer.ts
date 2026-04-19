@@ -66,11 +66,24 @@ export async function analyzeAdLive(input: AnalyzeInput): Promise<AnalysisResult
     throw new Error("Claude did not return a tool call. Unexpected response shape.");
   }
 
-  // Validate against our Zod schema (belt-and-suspenders)
+  // Validate against our Zod schema (belt-and-suspenders).
   const parsed = analysisResultSchema.safeParse(toolBlock.input);
   if (!parsed.success) {
-    console.error("[analyzer] Anthropic output failed validation:", parsed.error);
-    throw new Error("Analysis output did not match expected schema.");
+    // Log full details server-side for postmortem, but surface the first
+    // issue to the client so we can debug from the UI during OMR setup.
+    const issues = parsed.error.issues
+      .map(
+        (i) => `${i.path.join(".") || "(root)"}: ${i.message}`
+      )
+      .slice(0, 3)
+      .join(" | ");
+    console.error(
+      "[analyzer] Anthropic output failed validation:",
+      parsed.error.issues,
+      "— raw input:",
+      JSON.stringify(toolBlock.input).slice(0, 2000)
+    );
+    throw new Error(`Antwort passt nicht zum Schema: ${issues}`);
   }
 
   return parsed.data;

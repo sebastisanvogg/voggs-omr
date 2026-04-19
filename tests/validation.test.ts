@@ -143,24 +143,27 @@ describe("analysisResultSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("requires at least 3 recommendations", () => {
+  it("requires at least 2 recommendations", () => {
     const result = analysisResultSchema.safeParse({
       ...validResult,
-      recommendations: validResult.recommendations.slice(0, 2),
+      recommendations: validResult.recommendations.slice(0, 1),
     });
     expect(result.success).toBe(false);
   });
 
-  it("rejects invalid dimension name", () => {
+  it("tolerates unknown dimension names (normalized to snake_case string)", () => {
     const bad = {
       ...validResult,
       findings: [
-        { dimension: "magic", score: 50, comment: "Does not exist." },
+        { dimension: "Magic Power", score: 50, comment: "Was auch immer." },
         ...validResult.findings.slice(1),
       ],
     };
     const result = analysisResultSchema.safeParse(bad);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.findings[0].dimension).toBe("magic_power");
+    }
   });
 });
 
