@@ -48,3 +48,6 @@ screenshots/
 
 # claude code local settings
 .claude/settings.local.json
+
+# claude worktrees
+.claude/worktrees/
