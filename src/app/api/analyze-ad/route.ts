@@ -94,15 +94,10 @@ async function handle(req: NextRequest) {
         const tmpFile = path.join(tmpDir, `upload${extFromMime(input.mimeType)}`);
         await fs.writeFile(tmpFile, input.buffer);
 
-        images = await extractFrames(tmpFile);
-
-        await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
-
-        if (images.length === 0) {
-          return NextResponse.json(
-            { error: "Video konnte nicht verarbeitet werden. Versuche ein anderes Format." },
-            { status: 422 }
-          );
+        try {
+          images = await extractFrames(tmpFile);
+        } finally {
+          await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
         }
       } else {
         images = [{ base64: input.buffer.toString("base64"), mimeType: input.mimeType }];

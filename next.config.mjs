@@ -13,7 +13,11 @@ const nextConfig = {
   // output file tracing misses it and runtime spawns fail with
   // "Cannot find ffmpeg".
   outputFileTracingIncludes: {
-    "/api/analyze-ad": ["./node_modules/ffmpeg-static/**"],
+    "/api/analyze-ad": [
+      // pnpm symlink target + actual binary location
+      "./node_modules/ffmpeg-static/**",
+      "./node_modules/.pnpm/ffmpeg-static@*/**",
+    ],
   },
   // The analyzer needs the Node runtime (ffmpeg, fs). We default routes to
   // node and opt-in to edge per-route where it makes sense.

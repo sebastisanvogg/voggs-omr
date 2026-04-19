@@ -13,6 +13,15 @@ import Ffmpeg from "fluent-ffmpeg";
 const ffmpegPath = String(require("ffmpeg-static"));
 Ffmpeg.setFfmpegPath(ffmpegPath);
 
+function verifyFfmpegBinary(): void {
+  const existsSync = require("node:fs").existsSync as (p: string) => boolean;
+  if (!existsSync(ffmpegPath)) {
+    throw new Error(
+      `ffmpeg-Binary wurde im Deployment nicht gefunden (erwartet unter ${ffmpegPath}).`
+    );
+  }
+}
+
 const JPEG_QUALITY = 2; // 2 = high quality, 31 = low
 
 // Seek points (seconds). A 30-second ad will produce frames from the first
@@ -28,34 +37,57 @@ const SEEK_POINTS = [0.5, 2, 5, 10, 20, 45] as const;
 export async function extractFrames(
   inputPath: string
 ): Promise<Array<{ base64: string; mimeType: "image/jpeg" }>> {
+  verifyFfmpegBinary();
+
   const outDir = await fs.mkdtemp(path.join(os.tmpdir(), "vframes-"));
+  const errors: string[] = [];
 
   try {
     const frames: Array<{ base64: string; mimeType: "image/jpeg" }> = [];
     for (let i = 0; i < SEEK_POINTS.length; i++) {
       const outPath = path.join(outDir, `frame_${i}.jpg`);
-      const ok = await extractSingleFrame(inputPath, SEEK_POINTS[i], outPath);
-      if (!ok) continue;
+      const result = await extractSingleFrame(inputPath, SEEK_POINTS[i], outPath);
+      if (!result.ok) {
+        errors.push(`seek=${SEEK_POINTS[i]}s: ${result.error}`);
+        continue;
+      }
       try {
         const buf = await fs.readFile(outPath);
         if (buf.length > 0) {
           frames.push({ base64: buf.toString("base64"), mimeType: "image/jpeg" });
         }
-      } catch {
-        // Frame missing — past end of video, skip.
+      } catch (err) {
+        errors.push(
+          `seek=${SEEK_POINTS[i]}s: read failed: ${(err as Error).message}`
+        );
       }
     }
+
+    if (frames.length === 0) {
+      // Surface the real ffmpeg error to the caller (and server logs) so we
+      // can distinguish binary-missing / bad-format / zero-length-video.
+      console.error("[video-frames] all seeks failed:", errors);
+      throw new Error(
+        `ffmpeg-Extraktion fehlgeschlagen. Details: ${errors.join(" | ").slice(0, 500)}`
+      );
+    }
+
     return frames;
   } finally {
     await fs.rm(outDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
+interface FrameResult {
+  ok: boolean;
+  error?: string;
+}
+
 function extractSingleFrame(
   inputPath: string,
   seekSec: number,
   outputPath: string
-): Promise<boolean> {
+): Promise<FrameResult> {
   return new Promise((resolve) => {
     Ffmpeg(inputPath)
       .seekInput(seekSec)
@@ -65,8 +97,10 @@ function extractSingleFrame(
         "-vf scale=720:-2",
       ])
       .output(outputPath)
-      .on("end", () => resolve(true))
-      .on("error", () => resolve(false))
+      .on("end", () => resolve({ ok: true }))
+      .on("error", (err: Error) =>
+        resolve({ ok: false, error: err.message.slice(0, 140) })
+      )
       .run();
   });
 }
