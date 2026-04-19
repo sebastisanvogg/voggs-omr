@@ -14,9 +14,12 @@ const nextConfig = {
   // "Cannot find ffmpeg".
   outputFileTracingIncludes: {
     "/api/analyze-ad": [
-      // pnpm symlink target + actual binary location
+      // Broader patterns that work with both npm (flat node_modules) and
+      // pnpm (symlinked via .pnpm/*). The `@` in pnpm dir names would be
+      // interpreted as an extglob marker if we wrote `ffmpeg-static@*`,
+      // so we avoid that pattern.
       "./node_modules/ffmpeg-static/**",
-      "./node_modules/.pnpm/ffmpeg-static@*/**",
+      "./node_modules/.pnpm/**/ffmpeg-static/**",
     ],
   },
   // The analyzer needs the Node runtime (ffmpeg, fs). We default routes to

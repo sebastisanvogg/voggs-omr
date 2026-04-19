@@ -10,16 +10,53 @@ import Ffmpeg from "fluent-ffmpeg";
 // runtime ffprobe adds a second native binary dependency that can fail to
 // bundle. Instead we seek to fixed timestamps and silently drop seeks that
 // land past the end of the video.
-const ffmpegPath = String(require("ffmpeg-static"));
-Ffmpeg.setFfmpegPath(ffmpegPath);
+const existsSync = require("node:fs").existsSync as (p: string) => boolean;
+const readdirSync = require("node:fs").readdirSync as (p: string) => string[];
 
-function verifyFfmpegBinary(): void {
-  const existsSync = require("node:fs").existsSync as (p: string) => boolean;
-  if (!existsSync(ffmpegPath)) {
-    throw new Error(
-      `ffmpeg-Binary wurde im Deployment nicht gefunden (erwartet unter ${ffmpegPath}).`
-    );
+function resolveFfmpegPath(): string {
+  const reported = String(require("ffmpeg-static"));
+  if (existsSync(reported)) return reported;
+
+  // Vercel + pnpm sometimes loses the binary when file tracing doesn't
+  // follow the symlink. Fall back to a breadth-first scan of node_modules
+  // for anything named "ffmpeg-static/ffmpeg".
+  const roots = [
+    path.join(process.cwd(), "node_modules"),
+    path.join(process.cwd(), "node_modules", ".pnpm"),
+    "/var/task/node_modules",
+    "/var/task/node_modules/.pnpm",
+  ];
+  for (const root of roots) {
+    try {
+      const entries = readdirSync(root);
+      for (const entry of entries) {
+        if (!entry.includes("ffmpeg-static")) continue;
+        const direct = path.join(root, entry, "ffmpeg");
+        if (existsSync(direct)) return direct;
+        const nested = path.join(
+          root,
+          entry,
+          "node_modules",
+          "ffmpeg-static",
+          "ffmpeg"
+        );
+        if (existsSync(nested)) return nested;
+      }
+    } catch {
+      // Dir doesn't exist (expected for some roots) — keep searching.
+    }
   }
+
+  throw new Error(
+    `ffmpeg-Binary nicht auffindbar. Gesucht unter: ${reported}, ${roots.join(", ")}`
+  );
+}
+
+let resolvedFfmpegPath: string | null = null;
+function verifyFfmpegBinary(): void {
+  if (resolvedFfmpegPath) return;
+  resolvedFfmpegPath = resolveFfmpegPath();
+  Ffmpeg.setFfmpegPath(resolvedFfmpegPath);
 }
 
 const JPEG_QUALITY = 2; // 2 = high quality, 31 = low
