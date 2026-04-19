@@ -38,15 +38,45 @@ export function AdAnalyzer() {
     setError(null);
 
     try {
-      const form = new FormData();
-      form.append("file", file);
-      if (brand.trim()) form.append("brand", brand.trim());
-      if (audience.trim()) form.append("audience", audience.trim());
+      // Vercel serverless request bodies cap at 4.5 MB on Hobby. Anything
+      // larger must go through Blob client-upload (browser → Blob directly),
+      // then we POST just the URL to /api/analyze-ad.
+      const DIRECT_UPLOAD_LIMIT = 4 * 1024 * 1024;
+      let res: Response;
 
-      const res = await fetch("/api/analyze-ad", {
-        method: "POST",
-        body: form,
-      });
+      if (file.size > DIRECT_UPLOAD_LIMIT) {
+        const { upload } = await import("@vercel/blob/client");
+        const uploadedBlob = await upload(
+          `uploads/${Date.now()}-${file.name}`,
+          file,
+          {
+            access: "public",
+            handleUploadUrl: "/api/upload",
+            clientPayload: file.type,
+          }
+        );
+
+        res = await fetch("/api/analyze-ad", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            blobUrl: uploadedBlob.url,
+            mimeType: file.type,
+            brand: brand.trim() || undefined,
+            audience: audience.trim() || undefined,
+          }),
+        });
+      } else {
+        const form = new FormData();
+        form.append("file", file);
+        if (brand.trim()) form.append("brand", brand.trim());
+        if (audience.trim()) form.append("audience", audience.trim());
+
+        res = await fetch("/api/analyze-ad", {
+          method: "POST",
+          body: form,
+        });
+      }
 
       const body = await res.json();
 

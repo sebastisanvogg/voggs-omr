@@ -12,6 +12,13 @@ export const runtime = "nodejs";
 // Allow up to 60 seconds for live analysis (video frame extraction + Claude API)
 export const maxDuration = 60;
 
+interface AnalyzeInput {
+  buffer: Buffer;
+  mimeType: string;
+  brand?: string;
+  audience?: string;
+}
+
 export async function POST(req: NextRequest) {
   // --- Rate limit ---
   const ip =
@@ -33,60 +40,45 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // --- Parse multipart ---
-  let formData: FormData;
+  // --- Parse request (two supported shapes) ---
+  // (1) multipart FormData with `file` — used in dev / small files
+  // (2) JSON `{ blobUrl, mimeType, brand?, audience? }` — used in prod for
+  //     large uploads that would blow past Vercel's 4.5 MB serverless
+  //     request cap. The browser uploads directly to Blob, then POSTs the
+  //     resulting URL here.
+  const contentType = req.headers.get("content-type") ?? "";
+  let input: AnalyzeInput;
+
   try {
-    formData = await req.formData();
-  } catch {
-    return NextResponse.json({ error: "Invalid form data." }, { status: 400 });
+    if (contentType.startsWith("application/json")) {
+      input = await parseJsonBody(req);
+    } else {
+      input = await parseMultipart(req);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Bad request";
+    const status =
+      msg.includes("zu groß") ? 413 :
+      msg.includes("Dateityp") ? 415 :
+      400;
+    return NextResponse.json({ error: msg }, { status });
   }
-
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return NextResponse.json(
-      { error: "Bitte eine Datei hochladen." },
-      { status: 400 }
-    );
-  }
-
-  if (!isAcceptedMime(file.type)) {
-    return NextResponse.json(
-      { error: "Dateityp nicht unterstützt (MP4, MOV, JPG, PNG, WebP)." },
-      { status: 415 }
-    );
-  }
-
-  if (file.size > UPLOAD_LIMITS.maxBytes) {
-    return NextResponse.json(
-      {
-        error: `Datei zu groß (max. ${Math.round(UPLOAD_LIMITS.maxBytes / 1024 / 1024)} MB).`,
-      },
-      { status: 413 }
-    );
-  }
-
-  // Optional metadata
-  const brand = (formData.get("brand") as string | null) ?? undefined;
-  const audience = (formData.get("audience") as string | null) ?? undefined;
 
   // --- Analyze ---
   const mode = process.env.ANALYZER_MODE ?? "mock";
 
   if (mode === "live") {
     try {
-      const isVideo = file.type.startsWith("video/");
+      const isVideo = input.mimeType.startsWith("video/");
       let images: Array<{ base64: string; mimeType: string }>;
 
       if (isVideo) {
-        // Write video to temp file, extract frames, clean up
         const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "ad-upload-"));
-        const tmpFile = path.join(tmpDir, `upload${extFromMime(file.type)}`);
-        const buf = Buffer.from(await file.arrayBuffer());
-        await fs.writeFile(tmpFile, buf);
+        const tmpFile = path.join(tmpDir, `upload${extFromMime(input.mimeType)}`);
+        await fs.writeFile(tmpFile, input.buffer);
 
         images = await extractFrames(tmpFile);
 
-        // Cleanup temp file
         await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
 
         if (images.length === 0) {
@@ -96,17 +88,24 @@ export async function POST(req: NextRequest) {
           );
         }
       } else {
-        // Image: read directly as base64
-        const buf = Buffer.from(await file.arrayBuffer());
-        images = [{ base64: buf.toString("base64"), mimeType: file.type }];
+        images = [{ base64: input.buffer.toString("base64"), mimeType: input.mimeType }];
       }
 
-      const result = await analyzeAdLive({ images, brand, audience });
+      const result = await analyzeAdLive({
+        images,
+        brand: input.brand,
+        audience: input.audience,
+      });
 
       return NextResponse.json({
         ok: true,
         analysis: result,
-        meta: { mode, brand, audience, remaining: rl.remaining },
+        meta: {
+          mode,
+          brand: input.brand,
+          audience: input.audience,
+          remaining: rl.remaining,
+        },
       });
     } catch (err) {
       console.error("[analyze-ad] Live analysis failed:", err);
@@ -123,12 +122,8 @@ export async function POST(req: NextRequest) {
   }
 
   // --- Mock mode ---
-  // Simulate processing latency so the progress animation feels natural
   await new Promise((r) => setTimeout(r, 2_500));
-
   const raw = getMockAnalysisResult();
-
-  // Validate output (belt-and-suspenders — even mock should conform)
   const parsed = analysisResultSchema.safeParse(raw);
   if (!parsed.success) {
     console.error("[analyze-ad] Output validation failed:", parsed.error);
@@ -141,8 +136,91 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     analysis: parsed.data,
-    meta: { mode, brand, audience, remaining: rl.remaining },
+    meta: {
+      mode,
+      brand: input.brand,
+      audience: input.audience,
+      remaining: rl.remaining,
+    },
   });
+}
+
+async function parseMultipart(req: NextRequest): Promise<AnalyzeInput> {
+  const formData = await req.formData();
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Bitte eine Datei hochladen.");
+  }
+  if (!isAcceptedMime(file.type)) {
+    throw new Error("Dateityp nicht unterstützt (MP4, MOV, JPG, PNG, WebP).");
+  }
+  if (file.size > UPLOAD_LIMITS.maxBytes) {
+    throw new Error(
+      `Datei zu groß (max. ${Math.round(UPLOAD_LIMITS.maxBytes / 1024 / 1024)} MB).`
+    );
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  return {
+    buffer,
+    mimeType: file.type,
+    brand: (formData.get("brand") as string | null) ?? undefined,
+    audience: (formData.get("audience") as string | null) ?? undefined,
+  };
+}
+
+async function parseJsonBody(req: NextRequest): Promise<AnalyzeInput> {
+  const body = (await req.json()) as {
+    blobUrl?: string;
+    mimeType?: string;
+    brand?: string;
+    audience?: string;
+  };
+
+  if (!body.blobUrl || typeof body.blobUrl !== "string") {
+    throw new Error("blobUrl fehlt.");
+  }
+  if (!body.mimeType || !isAcceptedMime(body.mimeType)) {
+    throw new Error("Dateityp nicht unterstützt (MP4, MOV, JPG, PNG, WebP).");
+  }
+
+  // Only accept URLs hosted on the Blob bucket we provisioned.
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(body.blobUrl);
+  } catch {
+    throw new Error("Ungültige blobUrl.");
+  }
+  if (!parsedUrl.hostname.endsWith(".public.blob.vercel-storage.com")) {
+    throw new Error("blobUrl muss auf Vercel Blob zeigen.");
+  }
+
+  const res = await fetch(body.blobUrl);
+  if (!res.ok) {
+    throw new Error(`Datei konnte nicht geladen werden (status ${res.status}).`);
+  }
+
+  const contentLength = Number(res.headers.get("content-length") ?? "0");
+  if (contentLength > UPLOAD_LIMITS.maxBytes) {
+    throw new Error(
+      `Datei zu groß (max. ${Math.round(UPLOAD_LIMITS.maxBytes / 1024 / 1024)} MB).`
+    );
+  }
+
+  const buffer = Buffer.from(await res.arrayBuffer());
+  if (buffer.byteLength > UPLOAD_LIMITS.maxBytes) {
+    throw new Error(
+      `Datei zu groß (max. ${Math.round(UPLOAD_LIMITS.maxBytes / 1024 / 1024)} MB).`
+    );
+  }
+
+  return {
+    buffer,
+    mimeType: body.mimeType,
+    brand: body.brand,
+    audience: body.audience,
+  };
 }
 
 function extFromMime(mime: string): string {
