@@ -78,15 +78,23 @@ export function AdAnalyzer() {
         });
       }
 
-      const body = await res.json();
+      const body = await safeParseJson(res);
 
       if (!res.ok) {
-        throw new Error(
-          (body as Record<string, string>).error ?? `Fehler ${res.status}`
-        );
+        const fallback =
+          res.status === 413
+            ? "Datei zu groß für den Server. Versuch ein kleineres Video oder ein Bild."
+            : `Analyse fehlgeschlagen (${res.status}).`;
+        const serverMsg =
+          typeof body === "object" && body && "error" in body
+            ? String((body as { error?: unknown }).error)
+            : null;
+        throw new Error(serverMsg ?? fallback);
       }
 
-      setResult(body.analysis as AnalysisResult);
+      const analysis = (body as { analysis?: AnalysisResult }).analysis;
+      if (!analysis) throw new Error("Antwort enthielt kein Analyse-Objekt.");
+      setResult(analysis);
       setPhase("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler.");
@@ -103,6 +111,15 @@ export function AdAnalyzer() {
     setAudience("");
     setReportUnlocked(false);
   };
+
+  async function safeParseJson(res: Response): Promise<unknown> {
+    const ct = res.headers.get("content-type") ?? "";
+    if (ct.includes("application/json")) {
+      return res.json().catch(() => ({}));
+    }
+    const text = await res.text().catch(() => "");
+    return { error: text.slice(0, 200) || `HTTP ${res.status}` };
+  }
 
   return (
     <section
