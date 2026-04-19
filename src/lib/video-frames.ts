@@ -5,12 +5,16 @@ import path from "node:path";
 import os from "node:os";
 import Ffmpeg from "fluent-ffmpeg";
 
-// ffmpeg-static ships a binary; tell fluent-ffmpeg where to find it.
-// ffmpeg-static only exports via CJS default. Dynamic import works but the
-// path must be known synchronously. The require is safe here (server-only,
+// ffmpeg-static ships only the ffmpeg binary; ffprobe is a separate package.
+// Both must be wired explicitly because serverless environments (Vercel) do
+// not have either on PATH. The requires are safe here (server-only module,
 // Node runtime).
 const ffmpegPath = String(require("ffmpeg-static"));
+const ffprobeInstaller = require("@ffprobe-installer/ffprobe") as {
+  path: string;
+};
 Ffmpeg.setFfmpegPath(ffmpegPath);
+Ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 const MAX_FRAMES = 6;
 const JPEG_QUALITY = 2; // 2 = high quality, 31 = low
