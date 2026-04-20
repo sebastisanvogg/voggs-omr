@@ -306,16 +306,14 @@ export function ResultCard({ result, onRequestReport, unlocked = false }: Result
       )}
 
       <div className="flex flex-wrap items-center justify-center gap-2">
-        {unlocked && (
-          <Button
-            onClick={shareOnLinkedIn}
-            size="sm"
-            className="bg-[#0A66C2] text-white hover:bg-[#0958a8]"
-          >
-            <Linkedin className="mr-2 h-4 w-4" fill="currentColor" strokeWidth={0} />
-            Score auf LinkedIn teilen
-          </Button>
-        )}
+        <Button
+          onClick={shareOnLinkedIn}
+          size="sm"
+          className="bg-[#0A66C2] text-white hover:bg-[#0958a8]"
+        >
+          <Linkedin className="mr-2 h-4 w-4" fill="currentColor" strokeWidth={0} />
+          Score auf LinkedIn teilen
+        </Button>
         <Button onClick={handleShare} variant="outline" size="sm">
           <Share2 className="mr-2 h-4 w-4" />
           {shared ? "Kopiert!" : "Score kopieren"}

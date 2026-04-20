@@ -176,8 +176,12 @@ describe("isAcceptedMime", () => {
     expect(isAcceptedMime("video/mp4")).toBe(true);
   });
 
-  it("accepts image/jpeg", () => {
-    expect(isAcceptedMime("image/jpeg")).toBe(true);
+  it("accepts video/quicktime", () => {
+    expect(isAcceptedMime("video/quicktime")).toBe(true);
+  });
+
+  it("rejects image/jpeg (video-only analyzer)", () => {
+    expect(isAcceptedMime("image/jpeg")).toBe(false);
   });
 
   it("rejects application/pdf", () => {

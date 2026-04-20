@@ -30,12 +30,12 @@ export function Hero() {
         </h1>
 
         <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted sm:text-lg">
-          Lade deine Ad hoch — KI-Scoring in 30 Sekunden nach Hook · Trust · CTA.
+          Lade dein Video hoch — KI-Scoring in 30 Sekunden nach Hook · Trust · CTA.
         </p>
 
         <div className="mt-7 flex flex-col items-center gap-3">
           <Button size="lg" onClick={() => scrollTo("analyzer")}>
-            Ad analysieren · 30 Sek.
+            Video analysieren · 30 Sek.
             <ArrowDown className="ml-2 h-4 w-4" />
           </Button>
 

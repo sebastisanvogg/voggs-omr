@@ -5,12 +5,9 @@ import { motion } from "framer-motion";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
 const STEPS = [
-  { label: "Keyframes aus dem Video extrahiert", ms: 1500 },
-  { label: "Vision-Modell prüft Hook & Retention", ms: 2200 },
-  { label: "Trust-Signale & Social-Proof analysiert", ms: 1800 },
-  { label: "Sound · Captions · CTA bewertet", ms: 1600 },
-  { label: "Native-Feel & Trend-Fit abgeglichen", ms: 1700 },
-  { label: "Empfehlungen werden generiert", ms: 2000 },
+  { label: "Keyframes aus dem Video extrahiert", ms: 1200 },
+  { label: "Vision-Modell bewertet Hook · Trust · CTA", ms: 2200 },
+  { label: "Empfehlungen werden generiert", ms: 1800 },
 ] as const;
 
 interface ProgressStepsProps {

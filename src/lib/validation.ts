@@ -107,13 +107,9 @@ export type Finding = z.infer<typeof findingSchema>;
 
 export const UPLOAD_LIMITS = {
   maxBytes: 100 * 1024 * 1024, // 100 MB
-  acceptedMime: [
-    "video/mp4",
-    "video/quicktime",
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-  ] as const,
+  // Only videos — the analyzer is positioned as a TikTok-ad checker and
+  // static images skip the client-side frame-extraction pipeline.
+  acceptedMime: ["video/mp4", "video/quicktime"] as const,
 } as const;
 
 export type AcceptedMime = (typeof UPLOAD_LIMITS.acceptedMime)[number];

@@ -38,59 +38,24 @@ export function AdAnalyzer() {
     setError(null);
 
     try {
-      const DIRECT_UPLOAD_LIMIT = 4 * 1024 * 1024;
-      const isVideo = file.type.startsWith("video/");
-      let res: Response;
-
-      if (isVideo) {
-        // Videos: extract frames in the browser via canvas and POST only
-        // the small frame JPEGs. Skips Vercel Blob entirely — we never ship
-        // the full video to the server.
-        const { extractVideoFramesInBrowser } = await import("@/lib/client-frames");
-        const frames = await extractVideoFramesInBrowser(file);
-        if (frames.length === 0) {
-          throw new Error("Keine Frames aus dem Video extrahiert.");
-        }
-        res = await fetch("/api/analyze-ad", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            frames,
-            mimeType: "image/jpeg",
-            brand: brand.trim() || undefined,
-            audience: audience.trim() || undefined,
-          }),
-        });
-      } else if (file.size > DIRECT_UPLOAD_LIMIT) {
-        // Large single image → Blob client-upload, then send URL.
-        const { upload } = await import("@vercel/blob/client");
-        const uploadedBlob = await upload(
-          `uploads/${Date.now()}-${file.name}`,
-          file,
-          {
-            access: "public",
-            handleUploadUrl: "/api/upload",
-            clientPayload: file.type,
-          }
-        );
-        res = await fetch("/api/analyze-ad", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            blobUrl: uploadedBlob.url,
-            mimeType: file.type,
-            brand: brand.trim() || undefined,
-            audience: audience.trim() || undefined,
-          }),
-        });
-      } else {
-        // Small image → FormData directly.
-        const form = new FormData();
-        form.append("file", file);
-        if (brand.trim()) form.append("brand", brand.trim());
-        if (audience.trim()) form.append("audience", audience.trim());
-        res = await fetch("/api/analyze-ad", { method: "POST", body: form });
+      // Extract frames in the browser and POST only the JPEGs — the video
+      // itself never leaves the device, and we sidestep Vercel's 4.5 MB
+      // request cap entirely.
+      const { extractVideoFramesInBrowser } = await import("@/lib/client-frames");
+      const frames = await extractVideoFramesInBrowser(file);
+      if (frames.length === 0) {
+        throw new Error("Keine Frames aus dem Video extrahiert.");
       }
+      const res = await fetch("/api/analyze-ad", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          frames,
+          mimeType: "image/jpeg",
+          brand: brand.trim() || undefined,
+          audience: audience.trim() || undefined,
+        }),
+      });
 
       const body = await safeParseJson(res);
 
@@ -180,7 +145,7 @@ export function AdAnalyzer() {
                 className="w-full"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
-                Ad analysieren
+                Video analysieren
               </Button>
             </div>
           )}
@@ -216,7 +181,7 @@ export function AdAnalyzer() {
               onClick={reset}
               className="text-sm text-muted hover:text-foreground underline underline-offset-4 transition-colors"
             >
-              Andere Ad analysieren
+              Anderes Video analysieren
             </button>
           </div>
         )}

@@ -25,7 +25,9 @@ export async function analyzeAdLive(input: AnalyzeInput): Promise<AnalysisResult
     throw new Error("ANTHROPIC_API_KEY is not set. Set ANALYZER_MODE=mock to bypass.");
   }
 
-  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+  // Haiku 4.5 by default: ~2-3x faster and ~5x cheaper than Sonnet, and
+  // sufficient for a 9-dimension visual score. Override via env if needed.
+  const model = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5";
   const client = new Anthropic({ apiKey });
 
   // Build the content array: images + optional text context

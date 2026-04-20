@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState, useRef } from "react";
-import { Upload, Film, ImageIcon, AlertCircle } from "lucide-react";
+import { Upload, Film, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UPLOAD_LIMITS, isAcceptedMime } from "@/lib/validation";
 
@@ -20,7 +20,7 @@ export function UploadBox({ onFile, disabled = false }: UploadBoxProps) {
 
   const validate = useCallback((file: File): boolean => {
     if (!isAcceptedMime(file.type)) {
-      setError(`Dateityp nicht unterstützt. Erlaubt: MP4, MOV, JPG, PNG, WebP.`);
+      setError("Nur Videos erlaubt (MP4 oder MOV).");
       return false;
     }
     if (file.size > UPLOAD_LIMITS.maxBytes) {
@@ -89,14 +89,13 @@ export function UploadBox({ onFile, disabled = false }: UploadBoxProps) {
         <div className="flex items-center gap-2 text-muted">
           <Upload className="h-5 w-5" />
           <Film className="h-5 w-5" />
-          <ImageIcon className="h-5 w-5" />
         </div>
 
         <p className="text-sm font-medium text-foreground">
-          Datei hierher ziehen oder <span className="text-accent">durchsuchen</span>
+          Video hierher ziehen oder <span className="text-accent">durchsuchen</span>
         </p>
         <p className="text-xs text-muted-foreground">
-          Video (MP4, MOV) oder Bild (JPG, PNG, WebP) — max. {MAX_MB} MB
+          MP4 oder MOV — max. {MAX_MB} MB
         </p>
       </div>
 
@@ -108,8 +107,8 @@ export function UploadBox({ onFile, disabled = false }: UploadBoxProps) {
       )}
 
       <p className="text-xs text-muted-foreground">
-        Deine Datei wird einmalig analysiert und nach 24 Stunden gelöscht.
-        Keine dauerhafte Speicherung.{" "}
+        Dein Video wird einmalig analysiert — Frames werden im Browser
+        extrahiert, das Video selbst verlässt dein Gerät nicht.{" "}
         <a href="/datenschutz" className="underline">
           Mehr Infos
         </a>

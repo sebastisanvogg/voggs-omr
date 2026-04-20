@@ -12,10 +12,12 @@
  * POSTed directly in JSON without needing Blob storage.
  */
 
-const SEEK_POINTS: readonly number[] = [0.5, 2, 5, 10, 20, 45];
+// Fewer frames = faster Claude Vision call. Vercel Hobby caps Serverless
+// Functions at ~10s, so 3 well-chosen seek points keep us under the limit.
+const SEEK_POINTS: readonly number[] = [0.5, 4, 12];
 
-const MAX_WIDTH = 720;
-const JPEG_QUALITY = 0.82;
+const MAX_WIDTH = 540;
+const JPEG_QUALITY = 0.78;
 
 interface ExtractOptions {
   /** JPEG quality, 0–1. Default 0.82. */

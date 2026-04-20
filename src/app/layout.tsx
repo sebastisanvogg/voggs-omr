@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { ConsentBanner } from "@/components/consent-banner";
 import { Footer } from "@/components/sections/footer";
 import { MarqueeBanner } from "@/components/marquee-banner";
+import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -40,6 +41,7 @@ export default function RootLayout({
           Zum Ad Analyzer springen
         </a>
         <MarqueeBanner />
+        <SiteHeader />
         <div className="flex-1">{children}</div>
         <Footer />
         <ConsentBanner />
